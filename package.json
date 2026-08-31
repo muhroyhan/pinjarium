@@ -1,0 +1,35 @@
+{
+  "author": "muhroyhan",
+  "description": "",
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "rental",
+    "marketplace",
+    "pinjarium"
+  ],
+  "license": "ISC",
+  "main": "index.js",
+  "name": "pinjarium",
+  "packageManager": "pnpm@12.1.0+sha512.d9b8276d97f6ec86e49815877f91ee9f63cee61f2063b304e43b6dab8fa07ce8a9afd46d2facd39f921e6a9d06b3c75a81349c7b888c2d22886bae0229901037",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "dependency-cruiser": "^18.2.0",
+    "eslint": "^10.9.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.68.0"
+  },
+  "scripts": {
+    "build": "",
+    "lint": "eslint . --fix",
+    "typecheck": "tsc -b tsconfig.base.json",
+    "depcheck": "depcruise --config dependency-cruiser.ts .",
+    "test": ""
+  }
+}
