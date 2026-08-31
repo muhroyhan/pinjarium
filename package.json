@@ -17,8 +17,8 @@
   "type": "module",
   "version": "1.0.0",
   "devDependencies": {
-    "@types/node": "^26.4.0",
     "dependency-cruiser": "^18.2.0",
+    "dotenv": "^17.4.2",
     "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "prettier": "^3.9.6",
@@ -28,12 +28,16 @@
   "scripts": {
     "build": "",
     "lint": "eslint . --fix",
+    "format": "prettier --write \"**/**/**/*.{js,ts,tsx}\"",
     "typecheck": "tsc -b tsconfig.base.json",
     "depcheck": "depcruise --config dependency-cruiser.ts .",
-    "test": "",
+    "test": "pnpm -r --if-present run test",
     "dev:up": "docker compose up -d",
     "dev:down": "docker compose down",
     "db:generate": "pnpm --filter @pinjarium/kernel exec drizzle-kit generate",
     "db:migrate": "pnpm --filter @pinjarium/kernel exec drizzle-kit migrate"
+  },
+  "dependencies": {
+    "vitest": "^4.1.11"
   }
 }
