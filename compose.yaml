@@ -1,0 +1,36 @@
+name: pinjarium
+
+services:
+  db:
+    image: postgis/postgis:18-3.6-alpine
+    container_name: 'db'
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pinjarium
+      POSTGRES_PASSWORD: pinjarium
+      POSTGRES_DB: pinjarium
+    ports:
+      - "5432:5432"
+    volumes:
+      - pinjarium-data:/var/lib/postgresql
+      - ./db/docker/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pinjarium -d pinjarium"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:8.10.1-alpine3.23
+    container_name: 'redis'
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pinjarium-data:
