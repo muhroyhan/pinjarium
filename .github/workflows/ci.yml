@@ -42,5 +42,20 @@ jobs:
       - name: Dependencies Check
         run: pnpm depcheck
 
+      - name: Copy env file
+        run: cp packages/kernel/.env.example packages/kernel/.env
+
+      - name: Start database
+        run: docker compose up -d db
+
+      - name: Wait for database
+        run: |
+          until docker compose exec -T db pg_isready -U pinjarium -d pinjarium; do
+            sleep 2
+          done
+
+      - name: Run migrations
+        run: pnpm db:migrate
+
       - name: Testing
         run: pnpm test
