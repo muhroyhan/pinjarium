@@ -1,6 +1,5 @@
-import { dirname } from "node:path"
-import { fileURLToPath } from "node:url"
-
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";

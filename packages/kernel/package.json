@@ -2,15 +2,18 @@
   "name": "@pinjarium/kernel",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "drizzle-kit": "^0.31.10",
     "drizzle-orm": "^0.45.2",
     "pg": "^8.23.0"
   },
   "devDependencies": {
-    "@types/pg": "^8.23.1"
-  },
-  "scripts": {
-    "db:generate": "drizzle-kit generate"
+    "@types/pg": "^8.23.1",
+    "dotenv": "^17.4.2",
+    "vitest": "^4.1.11"
   }
 }
