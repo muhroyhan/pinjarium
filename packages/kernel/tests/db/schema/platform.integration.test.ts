@@ -2,8 +2,13 @@ import 'dotenv/config'
 import { randomUUID } from 'node:crypto'
 import { afterAll, describe, expect, it } from 'vitest'
 import { sql } from 'drizzle-orm'
-import { createDbPool } from '../connection'
-import { auditLog, idempotencyKey } from './platform'
+import { createDbPool } from '../../../src/db/connection'
+import {
+  auditLog,
+  idempotencyKey,
+  outboxMessage,
+  webhookEvent,
+} from '../../../src/db/schema/platform'
 
 const migrateUrl = process.env.DATABASE_MIGRATE_URL!
 const appAppendUrl = process.env.DATABASE_APP_APPEND_URL!
@@ -12,6 +17,9 @@ const appRwUrl = process.env.DATABASE_APP_RW_URL!
 const migrateDb = createDbPool(migrateUrl)
 const appAppendDb = createDbPool(appAppendUrl)
 const appRwDb = createDbPool(appRwUrl)
+
+const insertedWebhookEventIds: string[] = []
+const insertedOutboxMessageIds: string[] = []
 
 function auditLogRow(overrides: Partial<typeof auditLog.$inferInsert> = {}) {
   return {
@@ -61,6 +69,23 @@ afterAll(async () => {
   await migrateDb.execute(
     sql`DELETE FROM platform.idempotency_key WHERE scope = 'test.scope'`,
   )
+
+  if (insertedWebhookEventIds.length > 0) {
+    await migrateDb.execute(
+      sql`DELETE FROM platform.webhook_event WHERE id IN (${sql.join(
+        insertedWebhookEventIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    )
+  }
+  if (insertedOutboxMessageIds.length > 0) {
+    await migrateDb.execute(
+      sql`DELETE FROM platform.outbox_message WHERE id IN (${sql.join(
+        insertedOutboxMessageIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})`,
+    )
+  }
 })
 
 describe('platform.audit_log', () => {
@@ -116,5 +141,84 @@ describe('platform.idempotency_key', () => {
         .values(idempotencyKeyRow({ key: row.key })),
     )
     expect(message).toMatch(/duplicate key value/i)
+  })
+})
+
+function webhookEventRow(
+  overrides: Partial<typeof webhookEvent.$inferInsert> = {},
+) {
+  const row = {
+    id: randomUUID(),
+    source: 'PAYMENT' as const,
+    webhook_id: randomUUID(),
+    webhook_timestamp: new Date(),
+    headers: {},
+    raw_body: Buffer.from('test-webhook-body'),
+    signature_valid: true,
+    correlation_id: randomUUID(),
+    ...overrides,
+  }
+  insertedWebhookEventIds.push(row.id)
+  return row
+}
+
+function outboxMessageRow(
+  overrides: Partial<typeof outboxMessage.$inferInsert> = {},
+) {
+  const row = {
+    id: randomUUID(),
+    correlation_id: randomUUID(),
+    handler: 'test.handler',
+    payload: {},
+    ...overrides,
+  }
+  insertedOutboxMessageIds.push(row.id)
+  return row
+}
+
+describe('platform.webhook_event', () => {
+  it('rejects a duplicate (source, webhook_id) pair', async () => {
+    const row = webhookEventRow()
+
+    await appRwDb.insert(webhookEvent).values(row)
+
+    const message = await causeMessage(
+      appRwDb
+        .insert(webhookEvent)
+        .values(
+          webhookEventRow({ source: row.source, webhook_id: row.webhook_id }),
+        ),
+    )
+    expect(message).toMatch(/duplicate key value/i)
+  })
+})
+
+describe('platform.outbox_message', () => {
+  it('rejects a duplicate non-null dedup_key', async () => {
+    const dedupKey = randomUUID()
+    await appRwDb
+      .insert(outboxMessage)
+      .values(outboxMessageRow({ dedup_key: dedupKey }))
+
+    const message = await causeMessage(
+      appRwDb
+        .insert(outboxMessage)
+        .values(outboxMessageRow({ dedup_key: dedupKey })),
+    )
+    expect(message).toMatch(/duplicate key value/i)
+  })
+
+  it('allows two rows with a null dedup_key (partial index does not apply to NULL)', async () => {
+    await expect(
+      appRwDb
+        .insert(outboxMessage)
+        .values(outboxMessageRow({ dedup_key: null })),
+    ).resolves.not.toThrow()
+
+    await expect(
+      appRwDb
+        .insert(outboxMessage)
+        .values(outboxMessageRow({ dedup_key: null })),
+    ).resolves.not.toThrow()
   })
 })
