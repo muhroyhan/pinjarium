@@ -28,7 +28,7 @@
   "scripts": {
     "build": "",
     "lint": "eslint . --fix",
-    "format": "prettier --write \"*.{js,ts,tsx}\"",
+    "format": "prettier --write \"**/**/**/*.{js,ts,tsx}\"",
     "typecheck": "tsc -b tsconfig.base.json",
     "depcheck": "depcruise --config dependency-cruiser.ts .",
     "test": "pnpm -r --if-present run test",

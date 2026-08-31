@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it } from "vitest";
 import { sql } from "drizzle-orm";
 import { createDbPool } from "../connection";
 import { auditLog, idempotencyKey } from "./platform";
@@ -27,7 +27,9 @@ function auditLogRow(overrides: Partial<typeof auditLog.$inferInsert> = {}) {
   };
 }
 
-function idempotencyKeyRow(overrides: Partial<typeof idempotencyKey.$inferInsert> = {}) {
+function idempotencyKeyRow(
+  overrides: Partial<typeof idempotencyKey.$inferInsert> = {},
+) {
   return {
     key: randomUUID(),
     scope: "test.scope",
@@ -43,22 +45,31 @@ async function causeMessage(promise: Promise<unknown>): Promise<string> {
   try {
     await promise;
   } catch (error) {
-    const cause = error instanceof Error && error.cause instanceof Error ? error.cause : error;
+    const cause =
+      error instanceof Error && error.cause instanceof Error
+        ? error.cause
+        : error;
     return cause instanceof Error ? cause.message : String(cause);
   }
   throw new Error("expected promise to reject");
 }
 
 afterAll(async () => {
-  await migrateDb.execute(sql`DELETE FROM platform.audit_log WHERE entity_schema = 'platform' AND entity_table = 'audit_log'`);
-  await migrateDb.execute(sql`DELETE FROM platform.idempotency_key WHERE scope = 'test.scope'`);
+  await migrateDb.execute(
+    sql`DELETE FROM platform.audit_log WHERE entity_schema = 'platform' AND entity_table = 'audit_log'`,
+  );
+  await migrateDb.execute(
+    sql`DELETE FROM platform.idempotency_key WHERE scope = 'test.scope'`,
+  );
 });
 
 describe("platform.audit_log", () => {
   it("accepts a valid insert via app_append", async () => {
     const row = auditLogRow();
 
-    await expect(appAppendDb.insert(auditLog).values(row)).resolves.not.toThrow();
+    await expect(
+      appAppendDb.insert(auditLog).values(row),
+    ).resolves.not.toThrow();
 
     const rows = await migrateDb
       .select()
@@ -85,7 +96,9 @@ describe("platform.audit_log", () => {
     await appAppendDb.insert(auditLog).values(row);
 
     const message = await causeMessage(
-      appAppendDb.delete(auditLog).where(sql`${auditLog.correlation_id} = ${row.correlation_id}`),
+      appAppendDb
+        .delete(auditLog)
+        .where(sql`${auditLog.correlation_id} = ${row.correlation_id}`),
     );
     expect(message).toMatch(/permission denied/i);
   });
@@ -98,7 +111,9 @@ describe("platform.idempotency_key", () => {
     await appRwDb.insert(idempotencyKey).values(row);
 
     const message = await causeMessage(
-      appRwDb.insert(idempotencyKey).values(idempotencyKeyRow({ key: row.key })),
+      appRwDb
+        .insert(idempotencyKey)
+        .values(idempotencyKeyRow({ key: row.key })),
     );
     expect(message).toMatch(/duplicate key value/i);
   });
