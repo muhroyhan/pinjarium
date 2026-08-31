@@ -1,5 +1,16 @@
 {
   "name": "@pinjarium/kernel",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "drizzle-kit": "^0.31.10",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.23.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.23.1"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate"
+  }
 }

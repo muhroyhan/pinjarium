@@ -30,6 +30,10 @@
     "lint": "eslint . --fix",
     "typecheck": "tsc -b tsconfig.base.json",
     "depcheck": "depcruise --config dependency-cruiser.ts .",
-    "test": ""
+    "test": "",
+    "dev:up": "docker compose up -d",
+    "dev:down": "docker compose down",
+    "db:generate": "pnpm --filter @pinjarium/kernel exec drizzle-kit generate",
+    "db:migrate": "pnpm --filter @pinjarium/kernel exec drizzle-kit migrate"
   }
 }
